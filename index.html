@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IWMI · WEF+H Nexus Dashboard · AU-IDAWM Framework</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #1c2128;
+  --bg4: #21262d;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #484f58;
+  --teal: #1D9E75;
+  --teal2: #0d6e52;
+  --teal-glow: rgba(29,158,117,0.15);
+  --blue: #388bfd;
+  --blue2: rgba(56,139,253,0.15);
+  --amber: #d29922;
+  --amber2: rgba(210,153,34,0.15);
+  --coral: #f0883e;
+  --coral2: rgba(240,136,62,0.15);
+  --red: #f85149;
+  --red2: rgba(248,81,73,0.15);
+  --green: #3fb950;
+  --green2: rgba(63,185,80,0.15);
+  --purple: #a371f7;
+  --purple2: rgba(163,113,247,0.15);
+  --c-rweru: #388bfd;
+  --c-bero: #f0883e;
+  --c-nairobi: #3fb950;
+  --c-ibadan: #a371f7;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  min-height: 100vh;
+}
+/* SIDEBAR */
+.sidebar {
+  position: fixed; top: 0; left: 0; width: 220px; height: 100vh;
+  background: var(--bg2); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; z-index: 100; overflow-y: auto;
+}
+.sidebar-logo {
+  padding: 20px 18px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo .org {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: .12em;
+  color: var(--teal); text-transform: uppercase;
+}
+.sidebar-logo .title {
+  font-family: 'Fraunces', serif;
+  font-size: 15px; font-weight: 600;
+  color: var(--text); margin-top: 3px; line-height: 1.25;
+}
+.sidebar-logo .sub {
+  font-size: 10px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace;
+}
+.nav-section {
+  padding: 14px 10px 4px;
+  font-size: 9px; font-family: 'DM Mono', monospace;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--text3);
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px; margin: 1px 6px;
+  border-radius: 7px; cursor: pointer; transition: all .15s;
+  font-size: 12px; color: var(--text2); font-weight: 400;
+  border: 1px solid transparent;
+}
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active {
+  background: var(--teal-glow);
+  border-color: rgba(29,158,117,0.3);
+  color: var(--teal);
+}
+.nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.sidebar-schemes {
+  padding: 14px 10px 4px;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+.scheme-chip {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 10px; margin: 2px 0;
+  border-radius: 6px; font-size: 11px; color: var(--text2);
+}
+.scheme-chip .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+/* MAIN */
+.main { margin-left: 220px; min-height: 100vh; }
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(13,17,23,0.85); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 28px; display: flex; align-items: center; justify-content: space-between;
+}
+.topbar-title {
+  font-family: 'Fraunces', serif; font-size: 16px; font-weight: 300;
+  color: var(--text);
+}
+.topbar-meta {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: var(--text3); letter-spacing: .06em;
+}
+.content { padding: 24px 28px; }
+/* SECTION */
+.section { display: none; }
+.section.active { display: block; }
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+}
+.section-title {
+  font-family: 'Fraunces', serif; font-size: 22px; font-weight: 300;
+  color: var(--text);
+}
+.section-sub { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-top: 2px; }
+/* GRID */
+.grid2 { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-bottom: 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin-bottom: 14px; }
+.grid4 { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin-bottom: 14px; }
+/* CARDS */
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px 18px;
+}
+.card-title {
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 12px;
+}
+/* KPI */
+.kpi {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 14px;
+}
+.kpi-label { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; margin-bottom: 4px; }
+.kpi-val { font-size: 24px; font-weight: 500; color: var(--text); line-height: 1; }
+.kpi-unit { font-size: 10px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.kpi.accent-teal { border-left: 3px solid var(--teal); }
+.kpi.accent-blue { border-left: 3px solid var(--blue); }
+.kpi.accent-amber { border-left: 3px solid var(--amber); }
+.kpi.accent-coral { border-left: 3px solid var(--coral); }
+.kpi.accent-green { border-left: 3px solid var(--green); }
+.kpi.accent-purple { border-left: 3px solid var(--purple); }
+/* BADGE */
+.badge {
+  display: inline-block; font-size: 10px; padding: 2px 8px;
+  border-radius: 4px; font-family: 'DM Mono', monospace; font-weight: 500;
+}
+.badge-ok { background: var(--green2); color: var(--green); }
+.badge-warn { background: var(--amber2); color: var(--amber); }
+.badge-danger { background: var(--red2); color: var(--red); }
+.badge-info { background: var(--blue2); color: var(--blue); }
+.badge-teal { background: var(--teal-glow); color: var(--teal); }
+.badge-purple { background: var(--purple2); color: var(--purple); }
+/* TABLE */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+.data-table th {
+  text-align: left; padding: 8px 10px;
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text3); border-bottom: 1px solid var(--border2);
+  font-weight: 400;
+}
+.data-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--bg3); }
+.data-table td.strong { font-weight: 500; color: var(--text); }
+/* CHIP/TOGGLE */
+.chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.chip {
+  padding: 5px 12px; border-radius: 20px;
+  border: 1px solid var(--border2);
+  font-size: 11px; font-family: 'DM Mono', monospace;
+  cursor: pointer; background: transparent; color: var(--text2);
+  transition: all .15s;
+}
+.chip:hover { background: var(--bg3); color: var(--text); }
+.chip.on { background: var(--teal-glow); border-color: rgba(29,158,117,0.4); color: var(--teal); }
+/* DIVIDER */
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+/* ROW METRIC */
+.metric-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 0; border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.metric-row:last-child { border-bottom: none; }
+.metric-row .lbl { color: var(--text3); font-family: 'DM Mono', monospace; font-size: 10px; }
+.metric-row .val { font-weight: 500; color: var(--text); }
+/* DELTA */
+.delta-pos { color: var(--green); font-size: 10px; font-family: 'DM Mono', monospace; }
+.delta-neg { color: var(--red); font-size: 10px; font-family: 'DM Mono', monospace; }
+.delta-neu { color: var(--text3); font-size: 10px; font-family: 'DM Mono', monospace; }
+/* TRANSITION CARD */
+.trans-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px;
+  position: relative; overflow: hidden;
+}
+.trans-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 3px; height: 100%; background: var(--teal);
+}
+.trans-card.warn::before { background: var(--amber); }
+.trans-card.danger::before { background: var(--red); }
+/* PROGRESS BAR */
+.progress-wrap { background: var(--bg4); border-radius: 4px; height: 6px; overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 4px; transition: width .6s ease; }
+/* SELECT */
+select {
+  background: var(--bg3); border: 1px solid var(--border2);
+  color: var(--text); padding: 6px 10px; border-radius: 7px;
+  font-size: 12px; font-family: 'DM Mono', monospace;
+  cursor: pointer; outline: none;
+}
+select:focus { border-color: var(--teal); }
+/* RANGE */
+input[type=range] { accent-color: var(--teal); cursor: pointer; }
+/* LEGEND */
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 10px; color: var(--text3); margin-bottom: 8px; font-family: 'DM Mono', monospace; }
+.legend span { display: flex; align-items: center; gap: 5px; }
+.legend-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+/* PATHWAY BADGE */
+.pw { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 9px; font-family: 'DM Mono', monospace; font-weight: 500; }
+.pw-P1 { background: rgba(163,113,247,.15); color: var(--purple); }
+.pw-P2 { background: rgba(240,136,62,.15); color: var(--coral); }
+.pw-P3 { background: rgba(63,185,80,.15); color: var(--green); }
+.pw-P4 { background: rgba(56,139,253,.15); color: var(--blue); }
+/* CANVAS WRAPPER */
+.chart-wrap { position: relative; width: 100%; }
+/* TRANSITION ARROW */
+.trans-arrow {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace;
+  margin: 6px 0;
+}
+.trans-arrow::after { content: '→'; color: var(--teal); font-size: 14px; }
+/* COST TABLE */
+.cost-row {
+  display: flex; justify-content: space-between; padding: 5px 0;
+  border-bottom: 1px solid var(--border); font-size: 11px;
+}
+.cost-row:last-child { border-bottom: none; }
+.cost-row .cost-label { color: var(--text3); font-family: 'DM Mono', monospace; font-size: 10px; }
+.cost-row .cost-val { font-weight: 500; color: var(--text); }
+/* ANIMATION */
+@keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.section.active { animation: fadeUp .3s ease; }
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+/* POLY CANVAS */
+canvas.poly { display: block; }
+/* INFO BOX */
+.info-box {
+  background: var(--blue2); border: 1px solid rgba(56,139,253,0.2);
+  border-radius: var(--radius); padding: 10px 14px;
+  font-size: 11px; color: rgba(56,139,253,0.9); line-height: 1.6;
+  margin-bottom: 14px;
+}
+.warn-box {
+  background: var(--amber2); border: 1px solid rgba(210,153,34,0.25);
+  border-radius: var(--radius); padding: 10px 14px;
+  font-size: 11px; color: var(--amber); line-height: 1.6; margin-bottom: 14px;
+}
+.big-number {
+  font-family: 'Fraunces', serif; font-size: 38px; font-weight: 600;
+  line-height: 1;
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="org">IWMI · AU-IDAWM</div>
+    <div class="title">WEF+H Nexus<br>Dashboard</div>
+    <div class="sub">v2.0 · 2026</div>
+  </div>
+  <div class="nav-section">Views</div>
+  <div class="nav-item active" onclick="showSection('overview')"><div class="nav-dot"></div>Overview</div>
+  <div class="nav-item" onclick="showSection('schemes')"><div class="nav-dot"></div>Scheme profiles</div>
+  <div class="nav-item" onclick="showSection('compare')"><div class="nav-dot"></div>Scenario compare</div>
+  <div class="nav-item" onclick="showSection('transitions')"><div class="nav-dot"></div>Tech transitions</div>
+  <div class="nav-item" onclick="showSection('economics')"><div class="nav-dot"></div>Economics</div>
+  <div class="nav-item" onclick="showSection('ghg')"><div class="nav-dot"></div>GHG analysis</div>
+  <div class="nav-item" onclick="showSection('polygons')"><div class="nav-dot"></div>Nexus polygons</div>
+  <div class="nav-item" onclick="showSection('basin')"><div class="nav-dot"></div>Basin nexus (iGains)</div>
+  <div class="nav-item" onclick="showSection('hsi')"><div class="nav-dot"></div>Health safety (HSI)</div>
+
+  <div class="sidebar-schemes">
+    <div style="font-size:9px;font-family:'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Schemes</div>
+    <div class="scheme-chip"><div class="dot" style="background:var(--c-rweru)"></div><span style="font-size:10px;color:var(--text2)">Rweru · Rwanda</span></div>
+    <div class="scheme-chip"><div class="dot" style="background:var(--c-bero)"></div><span style="font-size:10px;color:var(--text2)">Bero · Somalia</span></div>
+    <div class="scheme-chip"><div class="dot" style="background:var(--c-nairobi)"></div><span style="font-size:10px;color:var(--text2)">Nairobi WW · Kenya</span></div>
+    <div class="scheme-chip"><div class="dot" style="background:var(--c-ibadan)"></div><span style="font-size:10px;color:var(--text2)">Ibadan · Nigeria</span></div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">AU-IDAWM WEF+H Nexus Assessment Framework</div>
+    <div class="topbar-meta">IWMI · CGIAR · Dummy data · April 2026</div>
+  </div>
+
+  <div class="content">
+
+  <!-- ===== OVERVIEW ===== -->
+  <div class="section active" id="sec-overview">
+    <div class="section-head">
+      <div>
+        <div class="section-title">Portfolio overview</div>
+        <div class="section-sub">Four schemes · three AU-IDAWM pathways · three climate zones</div>
+      </div>
+    </div>
+
+    <div class="grid4">
+      <div class="kpi accent-teal">
+        <div class="kpi-label">Best WEFNI score</div>
+        <div class="kpi-val big-number" id="ov-wefni">—</div>
+        <div class="kpi-unit">unit² · Ibadan drip/solar</div>
+      </div>
+      <div class="kpi accent-green">
+        <div class="kpi-label">Lowest GHG ha⁻¹</div>
+        <div class="kpi-val big-number" id="ov-ghg">—</div>
+        <div class="kpi-unit">kg CO₂ · solar schemes</div>
+      </div>
+      <div class="kpi accent-amber">
+        <div class="kpi-label">Best HSI (P3)</div>
+        <div class="kpi-val big-number" id="ov-hsi">—</div>
+        <div class="kpi-unit">Nairobi treated WW</div>
+      </div>
+      <div class="kpi accent-coral">
+        <div class="kpi-label">Portfolio GHG (diesel)</div>
+        <div class="kpi-val big-number" id="ov-diesel">—</div>
+        <div class="kpi-unit">t CO₂ yr⁻¹ if all diesel</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">WEFNI ranking — all schemes</div>
+        <div class="legend" id="leg-rank"></div>
+        <div class="chart-wrap" style="height:180px"><canvas id="chart-rank" role="img" aria-label="WEFNI ranking bar chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">GHG comparison — current config (kg CO₂ ha⁻¹ yr⁻¹)</div>
+        <div class="legend" id="leg-ghg-ov"></div>
+        <div class="chart-wrap" style="height:180px"><canvas id="chart-ghg-ov" role="img" aria-label="GHG comparison bar chart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Scheme summary table</div>
+      <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr>
+          <th style="width:160px">Scheme</th><th style="width:70px">Pathway</th>
+          <th>Water</th><th>Energy</th><th>Technology</th>
+          <th>Area (ha)</th><th>WEFNI</th><th>WEFHI</th>
+          <th>WUE</th><th>Yield</th><th>GHG ha⁻¹</th><th>HSI</th><th>Status</th>
+        </tr></thead>
+        <tbody id="summary-tbody"></tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="grid3" style="margin-top:14px">
+      <div class="card">
+        <div class="card-title">AU-IDAWM pathway distribution</div>
+        <div class="chart-wrap" style="height:160px"><canvas id="chart-pathway" role="img" aria-label="Pathway distribution donut chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Water source distribution</div>
+        <div class="chart-wrap" style="height:160px"><canvas id="chart-wsrc" role="img" aria-label="Water source donut chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Energy source distribution</div>
+        <div class="chart-wrap" style="height:160px"><canvas id="chart-esrc" role="img" aria-label="Energy source donut chart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCHEME PROFILES ===== -->
+  <div class="section" id="sec-schemes">
+    <div class="section-head">
+      <div>
+        <div class="section-title">Scheme profiles</div>
+        <div class="section-sub">Detailed parameters and performance for each scheme</div>
+      </div>
+    </div>
+    <div class="grid2" id="scheme-cards"></div>
+  </div>
+
+  <!-- ===== COMPARE ===== -->
+  <div class="section" id="sec-compare">
+    <div class="section-head">
+      <div>
+        <div class="section-title">Scenario comparison</div>
+        <div class="section-sub">Select baseline and alternatives to compare nexus performance</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">BASELINE</span>
+        <select id="sel-base" onchange="renderCompare()"></select>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">vs</span>
+        <select id="sel-c1" onchange="renderCompare()"></select>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">vs</span>
+        <select id="sel-c2" onchange="renderCompare()"></select>
+      </div>
+    </div>
+    <div class="grid3" id="compare-cards"></div>
+    <div class="card">
+      <div class="card-title">Normalised metric comparison (% of reference maximum)</div>
+      <div class="legend" id="leg-compare"></div>
+      <div class="chart-wrap" style="height:280px"><canvas id="chart-compare" role="img" aria-label="Grouped bar chart metric comparison"></canvas></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">Radar — WEF+H nexus profile</div>
+      <div class="chart-wrap" style="height:300px"><canvas id="chart-radar" role="img" aria-label="Radar chart nexus profiles"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ===== TECHNOLOGY TRANSITIONS ===== -->
+  <div class="section" id="sec-transitions">
+    <div class="section-head">
+      <div>
+        <div class="section-title">Irrigation technology transitions</div>
+        <div class="section-sub">WEF+H nexus gains and losses across modernisation pathways × energy sources</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      Following Taguta et al. (2022): transition gain WEFNG = WEFNI(final) − WEFNI(initial). Positive = nexus improvement. All three energy sources (solar, grid, diesel) modelled for each transition. Economics computed per hectare at 2025 SSA reference prices.
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+      <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">SCHEME</span>
+      <select id="trans-scheme" onchange="renderTransitions()"></select>
+      <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">CLIMATE ZONE</span>
+      <select id="trans-zone" onchange="renderTransitions()">
+        <option value="dry">Dry / arid</option>
+        <option value="tropical">Tropical</option>
+        <option value="temperate">Temperate</option>
+      </select>
+    </div>
+
+    <!-- Transition matrix 3×3 energy sources -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">WEFNI gain matrix — transition × energy source (unit²)</div>
+      <div style="overflow-x:auto"><table class="data-table" id="trans-matrix-table"></table></div>
+    </div>
+
+    <div id="trans-cards" class="grid3"></div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">WEFNI gain by transition pathway (all energy sources)</div>
+      <div class="legend" id="leg-trans"></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-trans" role="img" aria-label="Grouped bar chart of WEFNI gains by transition and energy source"></canvas></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">EP + WUE trade-off by transition (temperate zone baseline)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chart-tradeoff" role="img" aria-label="Scatter chart EP vs WUE trade-offs"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ===== ECONOMICS ===== -->
+  <div class="section" id="sec-economics">
+    <div class="section-head">
+      <div>
+        <div class="section-title">Economics of transition</div>
+        <div class="section-sub">Capital costs, operating costs, payback period, NPV — per hectare and whole-scheme</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+      <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">SCHEME</span>
+      <select id="econ-scheme" onchange="renderEconomics()"></select>
+      <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">FROM</span>
+      <select id="econ-from" onchange="renderEconomics()">
+        <option value="surface_irrig">Surface / furrow</option>
+        <option value="sprinkler">Sprinkler</option>
+      </select>
+      <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">TO</span>
+      <select id="econ-to" onchange="renderEconomics()">
+        <option value="sprinkler">Sprinkler</option>
+        <option value="drip">Drip</option>
+      </select>
+      <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">ENERGY</span>
+      <select id="econ-energy" onchange="renderEconomics()">
+        <option value="solar">Solar PV</option>
+        <option value="grid">Grid electric</option>
+        <option value="diesel">Diesel pump</option>
+      </select>
+      <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">DISCOUNT RATE %</span>
+      <input type="range" id="econ-discount" min="3" max="15" step="1" value="8" oninput="document.getElementById('econ-disc-val').textContent=this.value+'%';renderEconomics()">
+      <span id="econ-disc-val" style="font-size:11px;color:var(--teal);font-family:'DM Mono',monospace;min-width:28px">8%</span>
+    </div>
+
+    <div class="grid4" id="econ-kpis"></div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Cost breakdown — capital investment (USD ha⁻¹)</div>
+        <div id="cost-breakdown-list"></div>
+        <hr class="divider">
+        <div id="cost-total-row" style="display:flex;justify-content:space-between;font-size:13px">
+          <span style="color:var(--text3);font-family:'DM Mono',monospace">TOTAL CAPEX</span>
+          <span style="font-weight:500;color:var(--teal)" id="cost-total-val">—</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Annual operating cost comparison (USD ha⁻¹ yr⁻¹)</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-opex" role="img" aria-label="Operating cost comparison bar chart"></canvas></div>
+        <div class="legend" id="leg-opex"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">Cumulative NPV over 20-year project life (USD ha⁻¹)</div>
+      <div class="chart-wrap" style="height:240px"><canvas id="chart-npv" role="img" aria-label="NPV trajectory line chart over 20 years"></canvas></div>
+      <div class="legend" id="leg-npv"></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">Sensitivity — payback period vs water saving benefit price (USD m⁻³)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chart-sens" role="img" aria-label="Sensitivity analysis line chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ===== GHG ===== -->
+  <div class="section" id="sec-ghg">
+    <div class="section-head">
+      <div>
+        <div class="section-title">GHG emissions analysis</div>
+        <div class="section-sub">Energy source × irrigation technology × scheme size interactions</div>
+      </div>
+    </div>
+
+    <div class="grid3" id="ghg-kpis"></div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">GHG by energy source — all schemes (kg CO₂ ha⁻¹ yr⁻¹)</div>
+        <div class="legend" id="leg-ghg-src"></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-ghg-src" role="img" aria-label="Grouped GHG bar chart by energy source"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Emission pathway — grid RE transition (Rweru scheme)</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-ghg-path" role="img" aria-label="GHG emission reduction line chart as renewable share increases"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">GHG × irrigation technology interaction — all scenarios (kg CO₂ ha⁻¹ yr⁻¹)</div>
+      <div class="legend" id="leg-ghg-tech"></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-ghg-tech" role="img" aria-label="GHG by technology and energy source bar chart"></canvas></div>
+    </div>
+
+    <div class="grid2" style="margin-top:14px">
+      <div class="card">
+        <div class="card-title">Diesel → solar CO₂ saving (t CO₂ yr⁻¹ per scheme)</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="chart-co2save" role="img" aria-label="CO2 saving bar chart per scheme"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Carbon cost avoided at USD 15 t CO₂⁻¹ (USD ha⁻¹ yr⁻¹)</div>
+        <div id="carbon-cost-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== POLYGONS ===== -->
+  <div class="section" id="sec-polygons">
+    <div class="section-head">
+      <div>
+        <div class="section-title">WEF nexus polygons</div>
+        <div class="section-sub">Sustainability polygon area = WEFNI (3-axis) or WEFHI (4-axis for P3)</div>
+      </div>
+    </div>
+    <div class="info-box">
+      Three-axis WEFNI for P1/P2/P4 schemes (WUE · EP · Yield). Four-axis WEFHI for P3 wastewater-reuse schemes (WUE · EP · Yield · HSI). Polygon area (unit²) = nexus performance index. Larger area = better integrated performance. Reference maximum shown as dashed outline.
+    </div>
+    <div class="grid2" id="poly-grid"></div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">WEFNI comparison — transitions × energy source (temperate zone)</div>
+      <div class="legend" id="leg-poly-trans"></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-poly-comp" role="img" aria-label="WEFNI polygon area comparison bar chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ===== BASIN (iGains) ===== -->
+  <div class="section" id="sec-basin">
+    <div class="section-head">
+      <div>
+        <div class="section-title">Basin nexus gains (iGains4Gains)</div>
+        <div class="section-sub">After Lankford et al. (2025) — water allocation, real water savings, paracommoner redistribution</div>
+      </div>
+    </div>
+    <div class="info-box">
+      iGains4Gains logic applied to Rweru basin context. Four paracommoners: proprietor (irrigation), neighbour (downstream reuse), society, and nature. Real water savings = aggregate depletion reduction T1→T2. Rebound risk flagged when efficiency gains lead to area expansion without withdrawal controls.
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+      <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">SCENARIO</span>
+      <select id="basin-scenario" onchange="renderBasin()">
+        <option value="sc2">Sc2 — Efficiency gain, same area</option>
+        <option value="sc3">Sc3 — Efficiency + area reduction</option>
+        <option value="sc4">Sc4 — Efficiency + RIW withdrawal rule</option>
+      </select>
+    </div>
+
+    <div class="grid4" id="basin-kpis"></div>
+
+    <div class="grid2" style="margin-top:14px">
+      <div class="card">
+        <div class="card-title">Water disposition — six paracommoner fractions (hm³)</div>
+        <div class="legend" id="leg-basin-disp"></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-basin-disp" role="img" aria-label="Stacked bar chart water dispositions T1 vs T2"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Nexus gains / reversals T2 vs T1 baseline</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-basin-gains" role="img" aria-label="Bar chart nexus gains and reversals"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">Rebound risk — aggregate depletion under area expansion scenarios</div>
+      <div class="warn-box" id="basin-rebound-msg"></div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chart-basin-rebound" role="img" aria-label="Line chart showing rebound risk as irrigated area expands"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ===== HSI ===== -->
+  <div class="section" id="sec-hsi">
+    <div class="section-head">
+      <div>
+        <div class="section-title">Health safety index (HSI)</div>
+        <div class="section-sub">P3 wastewater-reuse schemes · water source × treatment level interactions</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      HSI = composite of pathogen reduction efficiency, treatment compliance rate, and exposure pathway control. Runs 0–1 (higher = safer). Derived from water source baseline + treatment efficacy modifier. WHO restricted irrigation guideline threshold: HSI ≥ 0.75. HSI drives the fourth axis of the WEFHI sustainability polygon for P3 schemes.
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">HSI construction — Nairobi WW scheme</div>
+        <div class="legend" id="leg-hsi-comp"></div>
+        <div class="chart-wrap" style="height:220px"><canvas id="chart-hsi-comp" role="img" aria-label="Stacked bar chart HSI sub-components"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">HSI vs treatment efficacy — by water source</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="chart-hsi-treat" role="img" aria-label="Line chart HSI vs treatment efficacy by water source type"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">WEFHI area change — HSI sensitivity (Nairobi scheme, tropical zone)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chart-wefhi-hsi" role="img" aria-label="Line chart WEFHI area vs HSI score"></canvas></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">HSI governance flags — all P3 scenarios</div>
+      <div id="hsi-flags-table"></div>
+    </div>
+  </div>
+
+  </div><!-- end content -->
+</div><!-- end main -->
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const G=9.81, RHO=1000, PUMP_EFF=0.65;
+
+const SCHEMES=[
+  { id:'rweru',    name:'Rweru Irrigation Scheme', country:'Rwanda',  area:820,  pathway:'P4',
+    wsrc:'surface',     esrc:'grid',   itech:'sprinkler',    lift:18,  gir:680, renew:35, wue:2.8,  yld:8.2,  treat:null,
+    zone:'tropical', desc:'Surface water canal scheme. Grid-tied sprinkler. AfDB appraisal mission Sep–Oct 2026. 8-year implementation gap since 2017 design.',
+    capex_existing:320, crop:'Maize / beans', climate:'Tropical highland' },
+  { id:'bero',     name:'Bero Oo Barwaaqee',       country:'Somalia', area:1200, pathway:'P2',
+    wsrc:'surface',     esrc:'diesel', itech:'surface_irrig', lift:8,   gir:920, renew:0,  wue:1.4,  yld:5.6,  treat:null,
+    zone:'dry',    desc:'Flood irrigation from seasonal river. Diesel pumping. AfDB preparation mission ongoing. Significant WUE improvement potential.',
+    capex_existing:180, crop:'Sorghum / sesame', climate:'Arid / semi-arid' },
+  { id:'nairobi',  name:'Nairobi Peri-urban WW',   country:'Kenya',   area:340,  pathway:'P3',
+    wsrc:'ww_treated',  esrc:'solar',  itech:'drip',         lift:12,  gir:540, renew:100, wue:3.2,  yld:9.4,  treat:78,
+    zone:'tropical', desc:'Treated wastewater reuse. Solar drip. SIDA SOR4D "From Wastewater to Plates" proposal. IWMI–LSHTM–APHRC consortium.',
+    capex_existing:580, crop:'Vegetables', climate:'Tropical humid' },
+  { id:'ibadan',   name:'Ibadan Research Plot',    country:'Nigeria', area:45,   pathway:'P4',
+    wsrc:'groundwater', esrc:'solar',  itech:'drip',         lift:55,  gir:610, renew:100, wue:3.6,  yld:12.1, treat:null,
+    zone:'tropical', desc:'Cocoa manuscript site. Deficit irrigation under SSP climate projections. ALMANAC model calibration site. FAO-56 PM ETo + Carr & Lockwood Kcs.',
+    capex_existing:720, crop:'Cocoa / citrus', climate:'Tropical humid' }
+];
+
+const ZONE_REF = {
+  dry:       {wue:2.57, ep:6.68, yld:7.07},
+  tropical:  {wue:4.06, ep:5.38, yld:7.87},
+  temperate: {wue:4.63, ep:5.24, yld:23.56}
+};
+
+const ITECH_EFF={surface_irrig:0.40, sprinkler:0.65, drip:0.85};
+const GHG_F={grid:0.50, solar:0.04, diesel:2.68};
+const HSI_BASE={surface:0.72, groundwater:0.82, ww_treated:0.65, ww_untreated:0.15};
+const COLORS={rweru:'#388bfd', bero:'#f0883e', nairobi:'#3fb950', ibadan:'#a371f7'};
+const SCOL={solar:'#3fb950', grid:'#388bfd', diesel:'#f0883e'};
+
+// Capex USD/ha reference prices (2025 SSA)
+const CAPEX={
+  surface_irrig:{ civil:180, equipment:80,  installation:40,  solar_pump:0 },
+  sprinkler:    { civil:220, equipment:320, installation:120, solar_pump:0 },
+  drip:         { civil:160, equipment:480, installation:160, solar_pump:0 }
+};
+const SOLAR_PUMP_HA=600; // USD/ha for solar pump system
+const GRID_CONN_HA=180;  // USD/ha for grid connection
+const OPEX_BASE={surface_irrig:{labour:85,maint:40},sprinkler:{labour:65,maint:95},drip:{labour:55,maint:140}};
+const ENERGY_COST={solar:0.04,grid:0.12,diesel:0.28}; // USD/kWh equiv
+const YIELD_PRICE=220; // USD/t
+const WATER_SAVING_PRICE=0.05; // USD/m3 baseline
+
+// ============================================================
+// COMPUTE
+// ============================================================
+function calcScheme(s){
+  const vol=(s.gir/1000)*s.area*10000;
+  const eJ=RHO*G*s.lift*vol;
+  const eMWh=eJ/(PUMP_EFF*3.6e9);
+  const ep=(s.yld*s.area*1000)/(eMWh*3600);
+  let ghg_ha;
+  if(s.esrc==='grid') ghg_ha=(eMWh*GHG_F.grid*(1-s.renew/100)*1000)/s.area;
+  else ghg_ha=(eMWh*GHG_F[s.esrc]*1000)/s.area;
+  const isP3=s.pathway==='P3'||s.wsrc==='ww_treated'||s.wsrc==='ww_untreated';
+  let hsi=HSI_BASE[s.wsrc]||0.72;
+  if(isP3&&s.treat!=null){
+    if(s.wsrc==='ww_untreated') hsi=Math.min(hsi+(s.treat/100)*0.55,0.90);
+    if(s.wsrc==='ww_treated')   hsi=Math.min(hsi+(s.treat/100)*0.30,0.97);
+  }
+  const ref=ZONE_REF[s.zone];
+  const R=90, ang=2*Math.PI/3;
+  const nW=Math.min(s.wue/ref.wue,1), nE=Math.min(ep/ref.ep,1), nY=Math.min(s.yld/ref.yld,1);
+  const wefni=0.5*(nW*nE*Math.sin(ang)+nE*nY*Math.sin(ang)+nY*nW*Math.sin(ang))*R*R;
+  const wefhi=isP3?0.5*(nW*nE+nE*nY+nY*hsi+hsi*nW)*R*R:null;
+  return {ep,ghg_ha,hsi:isP3?hsi:null,wefni,wefhi,isP3,vol_hm3:vol/1e6,eMWh,nW,nE,nY,ref};
+}
+
+const DATA=SCHEMES.map(s=>({...s,...calcScheme(s)}));
+
+function calcGHG(esrc,renew,eMWh,area){
+  if(esrc==='grid') return eMWh*GHG_F.grid*(1-renew/100)*1000/area;
+  return eMWh*GHG_F[esrc]*1000/area;
+}
+
+function calcWEFNI(wue,ep,yld,zone){
+  const ref=ZONE_REF[zone];
+  const R=90, ang=2*Math.PI/3;
+  const nW=Math.min(wue/ref.wue,1), nE=Math.min(ep/ref.ep,1), nY=Math.min(yld/ref.yld,1);
+  return 0.5*(nW*nE*Math.sin(ang)+nE*nY*Math.sin(ang)+nY*nW*Math.sin(ang))*R*R;
+}
+
+function calcTransition(s, fromTech, toTech, esrc, zone){
+  // WUE improves by irrigation efficiency ratio
+  const effGain=ITECH_EFF[toTech]/ITECH_EFF[fromTech];
+  const newWUE=Math.min(s.wue*effGain,ZONE_REF[zone].wue*1.1);
+  const newYld=s.yld*(1+(effGain-1)*0.4);
+  const newGIR=s.gir/effGain;
+  const vol=(newGIR/1000)*s.area*10000;
+  const eMWh=(RHO*G*s.lift*vol)/(PUMP_EFF*3.6e9);
+  const ep=(newYld*s.area*1000)/(eMWh*3600);
+  const ghg=calcGHG(esrc,esrc==='solar'?100:esrc==='grid'?35:0,eMWh,s.area);
+  const wefni=calcWEFNI(newWUE,ep,newYld,zone);
+  const baseWEFNI=calcWEFNI(s.wue,s.ep,s.yld,zone);
+  return {wefni,gain:wefni-baseWEFNI,newWUE,newYld,ep,ghg,newGIR,eMWh};
+}
+
+// Capex calculation USD/ha
+function calcCapex(fromTech, toTech, esrc){
+  const base=CAPEX[toTech];
+  const removal=CAPEX[fromTech].equipment*0.1; // 10% salvage
+  let total=base.civil+base.equipment+base.installation-removal;
+  if(esrc==='solar') total+=SOLAR_PUMP_HA;
+  if(esrc==='grid') total+=GRID_CONN_HA;
+  return {civil:base.civil, equip:base.equipment, install:base.installation, energy_infra:esrc==='solar'?SOLAR_PUMP_HA:esrc==='grid'?GRID_CONN_HA:0, salvage:-removal, total};
+}
+
+function calcOpex(tech, esrc, area, lift, gir, renew){
+  const vol=(gir/1000)*area*10000;
+  const eMWh=(RHO*G*lift*vol)/(PUMP_EFF*3.6e9);
+  const energyCost_ha=eMWh*ENERGY_COST[esrc]*1000/area; // scale to ha
+  const base=OPEX_BASE[tech];
+  return {labour:base.labour, maint:base.maint, energy:energyCost_ha, total:base.labour+base.maint+energyCost_ha};
+}
+
+function calcNPV(capex_ha, opexSave_ha, yieldGain_ha, discount, years){
+  let npv=-capex_ha;
+  let cum=[-capex_ha];
+  for(let y=1;y<=years;y++){
+    const benefit=(opexSave_ha+yieldGain_ha)/Math.pow(1+discount/100,y);
+    npv+=benefit;
+    cum.push(npv);
+  }
+  return {npv,cum};
+}
+
+// ============================================================
+// CHARTS REGISTRY
+// ============================================================
+const CHARTS={};
+function mkChart(id,cfg){
+  if(CHARTS[id]) CHARTS[id].destroy();
+  CHARTS[id]=new Chart(document.getElementById(id),cfg);
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmt(v,d=1){ return typeof v==='number'?v.toFixed(d):v; }
+function fmtI(v){ return Math.round(v).toLocaleString(); }
+function badge(txt,cls){ return `<span class="badge badge-${cls}">${txt}</span>`; }
+function statusBadge(d){
+  if(d.isP3&&d.hsi<0.5) return badge('HSI critical','danger');
+  if(d.ghg_ha>600) return badge('High GHG','warn');
+  if(d.wefni>1000) return badge('Strong WEFNI','ok');
+  if(d.esrc==='solar') return badge('Low carbon','teal');
+  return badge('Operational','info');
+}
+function delta(curr,base,inv){
+  const p=((curr-base)/base*100);
+  if(Math.abs(p)<0.5) return '<span class="delta-neu">→ no change</span>';
+  const good=inv?(p<0):(p>0);
+  return `<span class="${good?'delta-pos':'delta-neg'}">${p>0?'▲':'▼'} ${Math.abs(p).toFixed(1)}%</span>`;
+}
+function pw(p){ return `<span class="pw pw-${p}">${p}</span>`; }
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.textContent.trim().toLowerCase().replace(/\s+/g,'').includes(id.replace('-',''))) n.classList.add('active');
+  });
+  const renders={overview:renderOverview,schemes:renderSchemes,compare:renderCompare,
+    transitions:renderTransitions,economics:renderEconomics,ghg:renderGHG,
+    polygons:renderPolygons,basin:renderBasin,hsi:renderHSI};
+  if(renders[id]) renders[id]();
+}
+
+// ============================================================
+// OVERVIEW
+// ============================================================
+function renderOverview(){
+  const best=DATA.reduce((a,b)=>b.wefni>a.wefni?b:a);
+  const lowGHG=DATA.reduce((a,b)=>b.ghg_ha<a.ghg_ha?b:a);
+  const p3=DATA.find(d=>d.isP3);
+  const totalDiesel=DATA.reduce((acc,d)=>{
+    const vol=(d.gir/1000)*d.area*10000;
+    const eMWh=(RHO*G*d.lift*vol)/(PUMP_EFF*3.6e9);
+    return acc+eMWh*GHG_F.diesel*1000/1000;
+  },0);
+  document.getElementById('ov-wefni').textContent=best.wefni.toFixed(1);
+  document.getElementById('ov-ghg').textContent=lowGHG.ghg_ha<1?lowGHG.ghg_ha.toFixed(2):fmtI(lowGHG.ghg_ha);
+  document.getElementById('ov-hsi').textContent=p3&&p3.hsi?p3.hsi.toFixed(2):'—';
+  document.getElementById('ov-diesel').textContent=fmtI(totalDiesel);
+
+  // Summary table
+  document.getElementById('summary-tbody').innerHTML=DATA.map(d=>`
+    <tr>
+      <td class="strong">${d.name}<br><span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">${d.country}</span></td>
+      <td>${pw(d.pathway)}</td>
+      <td style="font-size:11px;color:var(--text3)">${d.wsrc.replace(/_/g,' ')}</td>
+      <td style="font-size:11px;color:var(--text3)">${d.esrc}</td>
+      <td style="font-size:11px;color:var(--text3)">${d.itech.replace(/_/g,' ')}</td>
+      <td class="strong">${fmtI(d.area)}</td>
+      <td class="strong" style="color:var(--teal)">${d.wefni.toFixed(1)}</td>
+      <td style="color:var(--green)">${d.wefhi?d.wefhi.toFixed(1):'—'}</td>
+      <td>${d.wue.toFixed(1)}</td>
+      <td>${d.yld.toFixed(1)}</td>
+      <td style="color:${d.ghg_ha<50?'var(--green)':d.ghg_ha>500?'var(--red)':'var(--amber)'}">${d.ghg_ha<1?d.ghg_ha.toFixed(2):fmtI(d.ghg_ha)}</td>
+      <td style="color:${d.hsi?d.hsi>=0.75?'var(--green)':d.hsi>=0.5?'var(--amber)':'var(--red)':'var(--text3)'}">${d.hsi?d.hsi.toFixed(2):'N/A'}</td>
+      <td>${statusBadge(d)}</td>
+    </tr>`).join('');
+
+  // Rank chart
+  document.getElementById('leg-rank').innerHTML=DATA.map(d=>`<span><span class="legend-sq" style="background:${COLORS[d.id]}"></span>${d.name.split(' ')[0]}: ${d.wefni.toFixed(1)}</span>`).join('');
+  mkChart('chart-rank',{type:'bar',data:{labels:DATA.map(d=>d.name.split(' ')[0]),datasets:[{data:DATA.map(d=>+d.wefni.toFixed(1)),backgroundColor:DATA.map(d=>COLORS[d.id]+'cc'),borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}}}});
+
+  // GHG chart
+  document.getElementById('leg-ghg-ov').innerHTML=DATA.map(d=>`<span><span class="legend-sq" style="background:${COLORS[d.id]}"></span>${d.name.split(' ')[0]}</span>`).join('');
+  mkChart('chart-ghg-ov',{type:'bar',data:{labels:DATA.map(d=>d.name.split(' ')[0]),datasets:[{data:DATA.map(d=>d.ghg_ha<1?+d.ghg_ha.toFixed(2):Math.round(d.ghg_ha)),backgroundColor:DATA.map(d=>COLORS[d.id]+'cc'),borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}}}});
+
+  // Donut charts
+  const donutOpts=(title)=>({responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}});
+  mkChart('chart-pathway',{type:'doughnut',data:{labels:['P2','P3','P4'],datasets:[{data:[1,1,2],backgroundColor:['#f0883e','#3fb950','#388bfd'],borderWidth:0}]},options:donutOpts()});
+  mkChart('chart-wsrc',{type:'doughnut',data:{labels:['Surface','Groundwater','Treated WW'],datasets:[{data:[2,1,1],backgroundColor:['#388bfd','#a371f7','#3fb950'],borderWidth:0}]},options:donutOpts()});
+  mkChart('chart-esrc',{type:'doughnut',data:{labels:['Grid','Solar','Diesel'],datasets:[{data:[1,2,1],backgroundColor:['#388bfd','#3fb950','#f0883e'],borderWidth:0}]},options:donutOpts()});
+}
+
+// ============================================================
+// SCHEME PROFILES
+// ============================================================
+function renderSchemes(){
+  document.getElementById('scheme-cards').innerHTML=DATA.map(d=>`
+    <div class="card" style="border-top:2px solid ${COLORS[d.id]}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-size:14px;font-weight:500;color:var(--text)">${d.name}</div>
+          <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px">${d.country} · ${d.climate}</div>
+        </div>
+        <div style="text-align:right">${pw(d.pathway)}&nbsp;${statusBadge(d)}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.6;margin-bottom:12px">${d.desc}</div>
+      <div class="grid2" style="margin-bottom:0">
+        <div>
+          <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;letter-spacing:.08em">SCHEME PARAMETERS</div>
+          <div class="metric-row"><span class="lbl">Area</span><span class="val">${fmtI(d.area)} ha</span></div>
+          <div class="metric-row"><span class="lbl">Crop</span><span class="val">${d.crop}</span></div>
+          <div class="metric-row"><span class="lbl">Water source</span><span class="val">${d.wsrc.replace(/_/g,' ')}</span></div>
+          <div class="metric-row"><span class="lbl">Energy source</span><span class="val">${d.esrc}</span></div>
+          <div class="metric-row"><span class="lbl">Technology</span><span class="val">${d.itech.replace(/_/g,' ')}</span></div>
+          <div class="metric-row"><span class="lbl">Lift / head</span><span class="val">${d.lift} m</span></div>
+          <div class="metric-row"><span class="lbl">Gross irrig. req.</span><span class="val">${d.gir} mm yr⁻¹</span></div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:6px;letter-spacing:.08em">NEXUS PERFORMANCE</div>
+          <div class="metric-row"><span class="lbl">WUE</span><span class="val" style="color:var(--teal)">${d.wue.toFixed(1)} kg m⁻³</span></div>
+          <div class="metric-row"><span class="lbl">EP</span><span class="val">${d.ep.toFixed(2)} kg MJ⁻¹</span></div>
+          <div class="metric-row"><span class="lbl">Yield</span><span class="val">${d.yld.toFixed(1)} t ha⁻¹</span></div>
+          <div class="metric-row"><span class="lbl">WEFNI</span><span class="val" style="color:var(--teal)">${d.wefni.toFixed(1)} unit²</span></div>
+          <div class="metric-row"><span class="lbl">WEFHI</span><span class="val" style="color:var(--green)">${d.wefhi?d.wefhi.toFixed(1)+' unit²':'N/A'}</span></div>
+          <div class="metric-row"><span class="lbl">GHG</span><span class="val" style="color:${d.ghg_ha<50?'var(--green)':d.ghg_ha>500?'var(--red)':'var(--amber)'}">${d.ghg_ha<1?d.ghg_ha.toFixed(2):fmtI(d.ghg_ha)} kg CO₂ ha⁻¹</span></div>
+          <div class="metric-row"><span class="lbl">HSI</span><span class="val" style="color:${d.hsi?d.hsi>=0.75?'var(--green)':d.hsi>=0.5?'var(--amber)':'var(--red)':'var(--text3)'}">${d.hsi?d.hsi.toFixed(2):'N/A'}</span></div>
+          <div class="metric-row"><span class="lbl">Vol. withdrawn</span><span class="val">${d.vol_hm3.toFixed(2)} hm³ yr⁻¹</span></div>
+          <div class="metric-row"><span class="lbl">Energy use</span><span class="val">${fmtI(d.eMWh)} MWh yr⁻¹</span></div>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:5px;letter-spacing:.08em">NORMALISED SCORES (% of zone max)</div>
+        ${[['WUE',d.nW,COLORS[d.id]],['EP',d.nE,'#a371f7'],['Yield',d.nY,'#d29922']].map(([l,v,c])=>`
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;width:36px">${l}</span>
+            <div class="progress-wrap" style="flex:1"><div class="progress-bar" style="width:${(v*100).toFixed(1)}%;background:${c}"></div></div>
+            <span style="font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;width:34px;text-align:right">${(v*100).toFixed(0)}%</span>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// ============================================================
+// COMPARE
+// ============================================================
+function initSelects(ids){
+  ids.forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.innerHTML=DATA.map((d,j)=>`<option value="${d.id}" ${j===i?'selected':''}>${d.name}</option>`).join('');
+  });
+}
+
+function renderCompare(){
+  initSelects(['sel-base','sel-c1','sel-c2']);
+  const base=DATA.find(d=>d.id===document.getElementById('sel-base').value);
+  const c1=DATA.find(d=>d.id===document.getElementById('sel-c1').value);
+  const c2=DATA.find(d=>d.id===document.getElementById('sel-c2').value);
+  const all=[base,c1,c2];
+
+  document.getElementById('compare-cards').innerHTML=all.map((d,i)=>`
+    <div class="card" style="border-top:2px solid ${COLORS[d.id]}">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:500">${d.name}</div>
+        <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">${i===0?'BASELINE':'ALT '+(i)}</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">${d.desc.slice(0,80)}...</div>
+      ${[['WEFNI',d.wefni.toFixed(1),'unit²',i>0?delta(d.wefni,base.wefni,true):''],
+         ['WEFHI',d.wefhi?d.wefhi.toFixed(1):'—','unit²',''],
+         ['WUE',d.wue.toFixed(1),'kg m⁻³',i>0?delta(d.wue,base.wue,true):''],
+         ['Yield',d.yld.toFixed(1),'t ha⁻¹',i>0?delta(d.yld,base.yld,true):''],
+         ['GHG ha⁻¹',d.ghg_ha<1?d.ghg_ha.toFixed(2):fmtI(d.ghg_ha),'kg CO₂',i>0?delta(d.ghg_ha,base.ghg_ha,false):''],
+         ['HSI',d.hsi?d.hsi.toFixed(2):'N/A','',i>0&&d.hsi&&base.hsi?delta(d.hsi,base.hsi,true):''],
+         ['Energy',fmtI(d.eMWh),'MWh yr⁻¹','']
+        ].map(([l,v,u,dt])=>`<div class="metric-row"><span class="lbl">${l}</span><span class="val">${v} <span style="font-size:10px;color:var(--text3)">${u}</span> ${dt}</span></div>`).join('')}
+      <div style="margin-top:8px">${statusBadge(d)}</div>
+    </div>`).join('');
+
+  // Bar comparison
+  const metrics=['WUE %','EP %','Yield %','WEFNI %','GHG inv.'];
+  const norm=d=>[+(d.wue/6*100).toFixed(1),+(Math.min(d.ep/8,1)*100).toFixed(1),+(d.yld/30*100).toFixed(1),+(d.wefni/2000*100).toFixed(1),+(Math.max(0,100-d.ghg_ha/20)).toFixed(1)];
+  document.getElementById('leg-compare').innerHTML=all.map(d=>`<span><span class="legend-sq" style="background:${COLORS[d.id]}"></span>${d.name.split(' ')[0]}</span>`).join('');
+  mkChart('chart-compare',{type:'bar',data:{labels:metrics,datasets:all.map(d=>({label:d.name.split(' ')[0],data:norm(d),backgroundColor:COLORS[d.id]+'88',borderColor:COLORS[d.id],borderWidth:1,borderRadius:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{max:100,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>v+'%'}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}}}});
+
+  // Radar
+  const radarLabels=['WUE','EP','Yield','WEFNI','GHG efficiency','HSI'];
+  const radarNorm=d=>[d.wue/6,Math.min(d.ep/8,1),d.yld/30,d.wefni/2000,Math.max(0,1-d.ghg_ha/2000),d.hsi||0.5].map(v=>+(v*100).toFixed(1));
+  mkChart('chart-radar',{type:'radar',data:{labels:radarLabels,datasets:all.map(d=>({label:d.name.split(' ')[0],data:radarNorm(d),borderColor:COLORS[d.id],backgroundColor:COLORS[d.id]+'22',pointBackgroundColor:COLORS[d.id],borderWidth:1.5,pointRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#8b949e',font:{size:9},backdropColor:'transparent'},pointLabels:{color:'#8b949e',font:{size:10}}}}}});
+}
+
+// ============================================================
+// TRANSITIONS
+// ============================================================
+function initTransSchemes(){
+  const el=document.getElementById('trans-scheme');
+  if(el.options.length===0) el.innerHTML=DATA.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+}
+
+function renderTransitions(){
+  initTransSchemes();
+  const sid=document.getElementById('trans-scheme').value;
+  const zone=document.getElementById('trans-zone').value;
+  const s=DATA.find(d=>d.id===sid);
+  const transitions=[
+    {from:'surface_irrig',to:'sprinkler',label:'Furrow → Sprinkler'},
+    {from:'surface_irrig',to:'drip',     label:'Furrow → Drip'},
+    {from:'sprinkler',    to:'drip',     label:'Sprinkler → Drip'}
+  ];
+  const energySources=['solar','grid','diesel'];
+
+  // Matrix table
+  const hdr=`<thead><tr><th>Transition</th>${energySources.map(e=>`<th style="text-align:center;color:${SCOL[e]}">${e.toUpperCase()}<br>WEFNG</th>`).join('')}</tr></thead>`;
+  const rows=transitions.map(t=>{
+    const cells=energySources.map(e=>{
+      const r=calcTransition(s,t.from,t.to,e,zone);
+      const col=r.gain>0?'var(--green)':r.gain<0?'var(--red)':'var(--text3)';
+      return `<td style="text-align:center;font-weight:500;color:${col};font-family:'DM Mono',monospace">${r.gain>0?'+':''}${r.gain.toFixed(1)}</td>`;
+    }).join('');
+    return `<tr><td class="strong">${t.label}</td>${cells}</tr>`;
+  }).join('');
+  document.getElementById('trans-matrix-table').innerHTML=hdr+`<tbody>${rows}</tbody>`;
+
+  // Transition cards
+  document.getElementById('trans-cards').innerHTML=transitions.map(t=>{
+    const solar=calcTransition(s,t.from,t.to,'solar',zone);
+    const best=solar;
+    const cls=best.gain>20?'':'warn';
+    return `<div class="trans-card ${cls}">
+      <div style="font-size:12px;font-weight:500;margin-bottom:8px">${t.label}</div>
+      ${energySources.map(e=>{
+        const r=calcTransition(s,t.from,t.to,e,zone);
+        return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px">
+          <span style="color:${SCOL[e]};font-family:'DM Mono',monospace">${e.toUpperCase()}</span>
+          <span style="color:${r.gain>0?'var(--green)':'var(--red)'};font-weight:500">${r.gain>0?'+':''}${r.gain.toFixed(1)} unit²</span>
+          <span style="color:var(--text3)">${fmtI(r.ghg)} CO₂</span>
+        </div>`;
+      }).join('')}
+      <div style="margin-top:8px;font-size:10px;color:var(--text3)">WUE: ${solar.newWUE.toFixed(2)} → Yield: ${solar.newYld.toFixed(1)} t ha⁻¹</div>
+    </div>`;
+  }).join('');
+
+  // Bar chart
+  const labels=transitions.map(t=>t.label);
+  document.getElementById('leg-trans').innerHTML=energySources.map(e=>`<span><span class="legend-sq" style="background:${SCOL[e]}"></span>${e}</span>`).join('');
+  mkChart('chart-trans',{type:'bar',data:{labels,datasets:energySources.map(e=>({label:e,data:transitions.map(t=>+calcTransition(s,t.from,t.to,e,zone).gain.toFixed(1)),backgroundColor:SCOL[e]+'99',borderColor:SCOL[e],borderWidth:1,borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}}}});
+
+  // Trade-off scatter
+  const tPoints=transitions.flatMap(t=>energySources.map(e=>{
+    const r=calcTransition(s,t.from,t.to,e,zone);
+    return {x:+r.newWUE.toFixed(2),y:+r.ep.toFixed(2),label:`${t.label.split('→')[1].trim()}·${e}`,color:SCOL[e]};
+  }));
+  mkChart('chart-tradeoff',{type:'scatter',data:{datasets:energySources.map(e=>({label:e,data:tPoints.filter(p=>p.color===SCOL[e]).map(p=>({x:p.x,y:p.y})),backgroundColor:SCOL[e]+'bb',pointRadius:6}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'WUE (kg m⁻³)',color:'#8b949e',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}},y:{title:{display:true,text:'EP (kg MJ⁻¹)',color:'#8b949e',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}}}}});
+}
+
+// ============================================================
+// ECONOMICS
+// ============================================================
+function initEconSelects(){
+  const el=document.getElementById('econ-scheme');
+  if(el&&el.options.length===0) el.innerHTML=DATA.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+}
+
+function renderEconomics(){
+  initEconSelects();
+  const sid=document.getElementById('econ-scheme').value;
+  const fromT=document.getElementById('econ-from').value;
+  const toT=document.getElementById('econ-to').value;
+  const esrc=document.getElementById('econ-energy').value;
+  const discount=+document.getElementById('econ-discount').value;
+  const s=DATA.find(d=>d.id===sid);
+
+  const capex=calcCapex(fromT,toT,esrc);
+  const opexBefore=calcOpex(fromT,s.esrc,s.area,s.lift,s.gir,s.renew);
+  const opexAfter=calcOpex(toT,esrc,s.area,s.lift,s.gir,esrc==='solar'?100:35);
+  const opexSave=opexBefore.total-opexAfter.total;
+  const effGain=ITECH_EFF[toT]/ITECH_EFF[fromT];
+  const yieldGain=(s.yld*(1+(effGain-1)*0.4)-s.yld)*YIELD_PRICE;
+  const {npv,cum}=calcNPV(capex.total,opexSave,yieldGain,discount,20);
+  const payback=cum.findIndex(v=>v>=0);
+
+  // Water saving
+  const volBefore=(s.gir/1000)*s.area*10000;
+  const volAfter=(s.gir/effGain/1000)*s.area*10000;
+  const wSave_ha=(volBefore-volAfter)/s.area;
+
+  document.getElementById('econ-kpis').innerHTML=[
+    {l:'Total CAPEX ha⁻¹',v:`USD ${fmtI(capex.total)}`,u:'per hectare',cls:'accent-coral'},
+    {l:'Whole-scheme CAPEX',v:`USD ${fmtI(capex.total*s.area/1000)}k`,u:`for ${fmtI(s.area)} ha`,cls:'accent-amber'},
+    {l:'Payback period',v:payback>0?payback+' yrs':'< 1 yr',u:'at '+discount+'% discount rate',cls:payback>0&&payback<10?'accent-teal':'accent-coral'},
+    {l:'20-yr NPV ha⁻¹',v:`USD ${npv>0?'+':''}${fmtI(npv)}`,u:'net present value',cls:npv>0?'accent-green':'accent-coral'}
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="kpi-label">${k.l}</div><div class="kpi-val" style="font-size:20px">${k.v}</div><div class="kpi-unit">${k.u}</div></div>`).join('');
+
+  // Cost breakdown
+  document.getElementById('cost-breakdown-list').innerHTML=Object.entries({
+    'Civil works':capex.civil,
+    'Equipment':capex.equip,
+    'Installation & commissioning':capex.install,
+    'Energy infrastructure':capex.energy_infra,
+    'Salvage value (credit)':capex.salvage
+  }).map(([l,v])=>`<div class="cost-row"><span class="cost-label">${l}</span><span class="cost-val" style="color:${v<0?'var(--green)':'var(--text)'}">${v<0?'−':''}USD ${fmtI(Math.abs(v))} ha⁻¹</span></div>`).join('');
+  document.getElementById('cost-total-val').textContent=`USD ${fmtI(capex.total)} ha⁻¹`;
+
+  // OPEX chart
+  const opexLabels=['Labour','Maintenance','Energy'];
+  const opexBdata=[opexBefore.labour,opexBefore.maint,Math.round(opexBefore.energy)];
+  const opexAdata=[opexAfter.labour,opexAfter.maint,Math.round(opexAfter.energy)];
+  document.getElementById('leg-opex').innerHTML=`<span><span class="legend-sq" style="background:#f0883e"></span>Before (${fromT.replace(/_/g,' ')} + ${s.esrc})</span><span><span class="legend-sq" style="background:#3fb950"></span>After (${toT.replace(/_/g,' ')} + ${esrc})</span>`;
+  mkChart('chart-opex',{type:'bar',data:{labels:opexLabels,datasets:[{label:'Before',data:opexBdata,backgroundColor:'#f0883e88',borderColor:'#f0883e',borderWidth:1,borderRadius:3},{label:'After',data:opexAdata,backgroundColor:'#3fb95088',borderColor:'#3fb950',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}},title:{display:true,text:'USD ha⁻¹ yr⁻¹',color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}}}});
+
+  // NPV line
+  document.getElementById('leg-npv').innerHTML=`<span><span class="legend-sq" style="background:#3fb950"></span>Cumulative NPV — ${toT.replace(/_/g,' ')} + ${esrc}</span><span style="margin-left:8px;color:var(--text3)">Discount: ${discount}% · Yield price: USD ${YIELD_PRICE}/t</span>`;
+  const npvYears=Array.from({length:21},(_,i)=>i);
+  mkChart('chart-npv',{type:'line',data:{labels:npvYears.map(y=>'Y'+y),datasets:[{label:'NPV',data:cum.map(v=>Math.round(v)),borderColor:'#3fb950',backgroundColor:'rgba(63,185,80,0.06)',borderWidth:2,pointRadius:2,tension:0.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10},callback:v=>'$'+fmtI(v)}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10},maxTicksLimit:11}}}}});
+
+  // Sensitivity
+  const prices=[0.01,0.03,0.05,0.08,0.10,0.15,0.20];
+  const techArr=[toT,toT==='drip'?'sprinkler':'drip'];
+  mkChart('chart-sens',{type:'line',data:{labels:prices.map(p=>`$${p}`),datasets:techArr.map((t,i)=>({label:t.replace(/_/g,' '),data:prices.map(wp=>{const opS=opexBefore.total-calcOpex(t,esrc,s.area,s.lift,s.gir/ITECH_EFF[t]*ITECH_EFF[fromT],100).total;const yG=(s.yld*(1+(ITECH_EFF[t]/ITECH_EFF[fromT]-1)*0.4)-s.yld)*YIELD_PRICE;const wG=wSave_ha*wp*10;const ann=opS+yG+wG;const cc=calcCapex(fromT,t,esrc).total;return ann>0?+(cc/ann).toFixed(1):25;}),borderColor:i===0?'#3fb950':'#388bfd',backgroundColor:'transparent',borderWidth:1.5,pointRadius:3,tension:0.3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:'Payback period (years)',color:'#8b949e',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}},x:{title:{display:true,text:'Water saving value (USD m⁻³)',color:'#8b949e',font:{size:10}},grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}}}});
+}
+
+// ============================================================
+// GHG
+// ============================================================
+function renderGHG(){
+  const srcLabel=['Grid (30% RE)','Solar PV','Diesel'];
+  const srcKeys=['grid','solar','diesel'];
+  const calcAll=(d,e)=>{
+    const vol=(d.gir/1000)*d.area*10000;
+    const eMWh=(RHO*G*d.lift*vol)/(PUMP_EFF*3.6e9);
+    return calcGHG(e,e==='solar'?100:e==='grid'?35:0,eMWh,d.area);
+  };
+  const avgD=DATA.reduce((a,d)=>a+calcAll(d,'diesel'),0)/DATA.length;
+  const avgS=DATA.reduce((a,d)=>a+calcAll(d,'solar'),0)/DATA.length;
+  const avgG=DATA.reduce((a,d)=>a+calcAll(d,'grid'),0)/DATA.length;
+  const totalDiesel=DATA.reduce((a,d)=>{
+    const vol=(d.gir/1000)*d.area*10000;
+    const eMWh=(RHO*G*d.lift*vol)/(PUMP_EFF*3.6e9);
+    return a+eMWh*GHG_F.diesel;
+  },0)*1000; // kg total
+
+  document.getElementById('ghg-kpis').innerHTML=[
+    {l:'Solar vs diesel saving',v:Math.round((1-avgS/avgD)*100)+'%',u:'average across schemes',cls:'accent-green'},
+    {l:'Grid (30% RE) vs diesel',v:Math.round((1-avgG/avgD)*100)+'%',u:'average across schemes',cls:'accent-blue'},
+    {l:'Portfolio GHG — all diesel',v:fmtI(totalDiesel/1000)+' t',u:'CO₂ yr⁻¹ if no transition',cls:'accent-coral'}
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="kpi-label">${k.l}</div><div class="kpi-val" style="font-size:22px">${k.v}</div><div class="kpi-unit">${k.u}</div></div>`).join('');
+
+  // Grouped bar
+  document.getElementById('leg-ghg-src').innerHTML=srcKeys.map((e,i)=>`<span><span class="legend-sq" style="background:${SCOL[e]}"></span>${srcLabel[i]}</span>`).join('');
+  mkChart('chart-ghg-src',{type:'bar',data:{labels:DATA.map(d=>d.name.split(' ')[0]),datasets:srcKeys.map((e,i)=>({label:srcLabel[i],data:DATA.map(d=>+calcAll(d,e).toFixed(1)),backgroundColor:SCOL[e]+'88',borderColor:SCOL[e],borderWidth:1,borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}},title:{display:true,text:'kg CO₂ ha⁻¹ yr⁻¹',color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}}}});
+
+  // Pathway line
+  const rw=DATA[0];
+  const vol=(rw.gir/1000)*rw.area*10000;
+  const eMWh=(RHO*G*rw.lift*vol)/(PUMP_EFF*3.6e9);
+  const rePts=Array.from({length:21},(_,i)=>i*5);
+  mkChart('chart-ghg-path',{type:'line',data:{labels:rePts.map(r=>r+'%'),datasets:[{label:'Grid variable RE',data:rePts.map(r=>+(eMWh*GHG_F.grid*(1-r/100)*1000/rw.area).toFixed(1)),borderColor:'#388bfd',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:0.3},{label:'Solar baseline',data:rePts.map(_=>+(eMWh*GHG_F.solar*1000/rw.area).toFixed(2)),borderColor:'#3fb950',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,4],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}},title:{display:true,text:'Renewable energy share',color:'#8b949e',font:{size:10}}}}}});
+
+  // Tech × energy
+  const techs=['surface_irrig','sprinkler','drip'];
+  const techLabels=['Furrow','Sprinkler','Drip'];
+  document.getElementById('leg-ghg-tech').innerHTML=srcKeys.map((e,i)=>`<span><span class="legend-sq" style="background:${SCOL[e]}"></span>${srcLabel[i]}</span>`).join('');
+  mkChart('chart-ghg-tech',{type:'bar',data:{labels:techLabels,datasets:srcKeys.map((e,i)=>{
+    const ref=DATA[0];
+    return {label:srcLabel[i],data:techs.map(t=>{
+      const vol2=(ref.gir/ITECH_EFF[t]*ITECH_EFF[ref.itech]/1000)*ref.area*10000;
+      const eM=(RHO*G*ref.lift*vol2)/(PUMP_EFF*3.6e9);
+      return +calcGHG(e,e==='solar'?100:35,eM,ref.area).toFixed(1);
+    }),backgroundColor:SCOL[e]+'88',borderColor:SCOL[e],borderWidth:1,borderRadius:3};
+  })},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}}}});
+
+  // CO2 save
+  mkChart('chart-co2save',{type:'bar',data:{labels:DATA.map(d=>d.name.split(' ')[0]),datasets:[{data:DATA.map(d=>{
+    const vol=(d.gir/1000)*d.area*10000;
+    const eMWh=(RHO*G*d.lift*vol)/(PUMP_EFF*3.6e9);
+    return Math.round((eMWh*GHG_F.diesel-eMWh*GHG_F.solar)*1000/1000);
+  }),backgroundColor:DATA.map(d=>COLORS[d.id]+'cc'),borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}}}});
+
+  // Carbon cost
+  document.getElementById('carbon-cost-list').innerHTML=DATA.map(d=>{
+    const vol=(d.gir/1000)*d.area*10000;
+    const eMWh=(RHO*G*d.lift*vol)/(PUMP_EFF*3.6e9);
+    const saving=Math.round((eMWh*GHG_F.diesel-eMWh*GHG_F.solar)*1000/1000);
+    const cost=Math.round(saving*15/d.area);
+    return `<div class="metric-row"><span class="lbl">${d.name.split(' ')[0]}</span><span class="val" style="color:var(--green)">USD ${cost} ha⁻¹ yr⁻¹</span></div>`;
+  }).join('');
+}
+
+// ============================================================
+// POLYGONS
+// ============================================================
+function drawPoly(canvasId, d, R=80){
+  const cv=document.getElementById(canvasId);
+  if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const cx=cv.width/2, cy=cv.height/2;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const gc='rgba(255,255,255,0.05)', ac='rgba(255,255,255,0.15)', col=COLORS[d.id];
+  if(d.isP3){
+    const pts4=[[0,-R],[R,0],[0,R],[-R,0]];
+    [0.33,0.66,1].forEach(s2=>{ctx.beginPath();pts4.forEach(([x,y],i)=>i===0?ctx.moveTo(cx+x*s2,cy+y*s2):ctx.lineTo(cx+x*s2,cy+y*s2));ctx.closePath();ctx.strokeStyle=gc;ctx.lineWidth=0.5;ctx.stroke();});
+    pts4.forEach(([x,y])=>{ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+x,cy+y);ctx.strokeStyle=ac;ctx.lineWidth=0.5;ctx.stroke();});
+    const hsi=d.hsi||0;
+    const sp=[[0,-d.nW*R],[d.nE*R,0],[0,d.nY*R],[-hsi*R,0]];
+    ctx.beginPath();sp.forEach(([x,y],i)=>i===0?ctx.moveTo(cx+x,cy+y):ctx.lineTo(cx+x,cy+y));ctx.closePath();
+    ctx.fillStyle=col+'28';ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke();
+    [['WUE',cx,cy-R-10],['EP',cx+R+12,cy+3],['Yield',cx,cy+R+14],['HSI',cx-R-12,cy+3]].forEach(([t,x,y])=>{ctx.fillStyle='rgba(139,148,158,0.9)';ctx.font='10px DM Mono,monospace';ctx.textAlign='center';ctx.fillText(t,x,y);});
+  } else {
+    const a=Math.PI/2,a2=a+2*Math.PI/3,a3=a2+2*Math.PI/3;
+    const axes=[[Math.cos(a),Math.sin(a)],[Math.cos(a2),Math.sin(a2)],[Math.cos(a3),Math.sin(a3)]];
+    [0.33,0.66,1].forEach(s2=>{ctx.beginPath();axes.forEach(([ax,ay],i)=>i===0?ctx.moveTo(cx+ax*R*s2,cy-ay*R*s2):ctx.lineTo(cx+ax*R*s2,cy-ay*R*s2));ctx.closePath();ctx.strokeStyle=gc;ctx.lineWidth=0.5;ctx.stroke();});
+    axes.forEach(([ax,ay])=>{ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+ax*R,cy-ay*R);ctx.strokeStyle=ac;ctx.lineWidth=0.5;ctx.stroke();});
+    const vals=[d.nW,d.nE,d.nY];
+    // reference max
+    ctx.beginPath();axes.forEach(([ax,ay],i)=>{i===0?ctx.moveTo(cx+ax*R,cy-ay*R):ctx.lineTo(cx+ax*R,cy-ay*R);});ctx.closePath();ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=0.5;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);
+    const pts=axes.map(([ax,ay],i)=>[cx+ax*R*vals[i],cy-ay*R*vals[i]]);
+    ctx.beginPath();pts.forEach(([x,y],i)=>i===0?ctx.moveTo(x,y):ctx.lineTo(x,y));ctx.closePath();
+    ctx.fillStyle=col+'28';ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=2;ctx.stroke();
+    [['WUE',cx+Math.cos(a)*R+2,cy-Math.sin(a)*R-10],['EP',cx+Math.cos(a2)*R-14,cy-Math.sin(a2)*R+4],['Yield',cx+Math.cos(a3)*R+12,cy-Math.sin(a3)*R+4]].forEach(([t,x,y])=>{ctx.fillStyle='rgba(139,148,158,0.9)';ctx.font='10px DM Mono,monospace';ctx.textAlign='center';ctx.fillText(t,x,y);});
+  }
+  ctx.beginPath();ctx.arc(cx,cy,3,0,2*Math.PI);ctx.fillStyle=ac;ctx.fill();
+}
+
+function renderPolygons(){
+  document.getElementById('poly-grid').innerHTML=DATA.map(d=>`
+    <div class="card" style="border-top:2px solid ${COLORS[d.id]}">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:500">${d.name}</div>${statusBadge(d)}</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px">${d.pathway} · ${d.wsrc.replace(/_/g,' ')} · ${d.esrc} · ${d.zone}</div>
+      <canvas id="poly-${d.id}" class="poly" width="240" height="220"></canvas>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;font-family:'DM Mono',monospace">
+        <span style="color:var(--text3)">WEFNI <strong style="color:${COLORS[d.id]}">${d.wefni.toFixed(1)}</strong></span>
+        ${d.wefhi!=null?`<span style="color:var(--text3)">WEFHI <strong style="color:var(--green)">${d.wefhi.toFixed(1)}</strong></span>`:''}
+        <span style="color:var(--text3)">HSI <strong style="color:var(--amber)">${d.hsi?d.hsi.toFixed(2):'—'}</strong></span>
+      </div>
+    </div>`).join('');
+  setTimeout(()=>DATA.forEach(d=>drawPoly('poly-'+d.id,d)),50);
+
+  // Comparison bar across transitions
+  const zone='tropical';
+  const ref=DATA[0];
+  const tcs=[
+    {l:'Furrow→Sprinkler·solar',from:'surface_irrig',to:'sprinkler',e:'solar'},
+    {l:'Furrow→Drip·solar',from:'surface_irrig',to:'drip',e:'solar'},
+    {l:'Sprinkler→Drip·solar',from:'sprinkler',to:'drip',e:'solar'},
+    {l:'Furrow→Drip·grid',from:'surface_irrig',to:'drip',e:'grid'},
+    {l:'Furrow→Drip·diesel',from:'surface_irrig',to:'drip',e:'diesel'}
+  ];
+  document.getElementById('leg-poly-trans').innerHTML=`<span><span class="legend-sq" style="background:var(--teal)"></span>WEFNI after transition</span><span><span class="legend-sq" style="background:rgba(255,255,255,0.1)"></span>Baseline</span>`;
+  mkChart('chart-poly-comp',{type:'bar',data:{labels:tcs.map(t=>t.l.split('·')[0].trim()),datasets:[
+    {label:'Baseline WEFNI',data:tcs.map(_=>+ref.wefni.toFixed(1)),backgroundColor:'rgba(255,255,255,0.08)',borderColor:'rgba(255,255,255,0.2)',borderWidth:1,borderRadius:3},
+    {label:'After transition',data:tcs.map(t=>+calcTransition(ref,t.from,t.to,t.e,zone).wefni.toFixed(1)),backgroundColor:tcs.map(t=>SCOL[t.e]+'99'),borderColor:tcs.map(t=>SCOL[t.e]),borderWidth:1,borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10},maxRotation:30}}}}});
+}
+
+// ============================================================
+// BASIN
+// ============================================================
+function renderBasin(){
+  const sc=document.getElementById('basin-scenario').value;
+  const T1={
+    TBS:367, priority:215, avail:167, FIW:143, AWD:136,
+    propBC:98.7, nbBC:10.7, soc:78, wfn:19.7, snrf:133, losses:27,
+    crop:350, carbon:151, wfn_pct:5.4
+  };
+  const scens={
+    sc2:{FIW:143,AWD:139,propBC:119,nbBC:6.9,soc:114,wfn:28.7,snrf:116,losses:13,crop:352,carbon:166,wfn_pct:7.2,label:'Sc2 — Efficiency, same withdrawal'},
+    sc3:{FIW:110,AWD:108,propBC:92,nbBC:5.3,soc:125,wfn:49.4,snrf:116,losses:10,crop:272,carbon:64,wfn_pct:12.4,label:'Sc3 — Efficiency + area reduction'},
+    sc4:{FIW:138,AWD:136,propBC:124,nbBC:4.4,soc:115,wfn:30.7,snrf:116,losses:7,crop:360,carbon:45,wfn_pct:7.7,label:'Sc4 — Efficiency + RIW rule'}
+  };
+  const T2=scens[sc];
+
+  document.getElementById('basin-kpis').innerHTML=[
+    {l:'Real water savings',v:+(T1.AWD-T2.AWD).toFixed(1),u:'hm³ yr⁻¹',cls:T1.AWD-T2.AWD>0?'accent-teal':'accent-coral'},
+    {l:'Crop production Δ',v:(T2.crop-T1.crop>0?'+':'')+(T2.crop-T1.crop)+' kt',u:'vs T1 baseline',cls:T2.crop>=T1.crop?'accent-green':'accent-amber'},
+    {l:'GHG savings',v:+(T1.carbon-T2.carbon).toFixed(0)+' kt',u:'CO₂ yr⁻¹',cls:T1.carbon-T2.carbon>0?'accent-green':'accent-coral'},
+    {l:'Water for nature',v:T2.wfn_pct.toFixed(1)+'%',u:'of total basin supply',cls:'accent-blue'}
+  ].map(k=>`<div class="kpi ${k.cls}"><div class="kpi-label">${k.l}</div><div class="kpi-val" style="font-size:20px">${k.v}</div><div class="kpi-unit">${k.u}</div></div>`).join('');
+
+  const disp=['Proprietor BC','Neighbour BC','Soc. consumed','Water for nature','Soc. non-recov.','Irrig. losses'];
+  const t1vals=[T1.propBC,T1.nbBC,T1.soc,T1.wfn,T1.snrf,T1.losses];
+  const t2vals=[T2.propBC,T2.nbBC,T2.soc,T2.wfn,T2.snrf,T2.losses];
+  const dcols=['#388bfd','#a371f7','#d29922','#3fb950','#8b949e','#f0883e'];
+  document.getElementById('leg-basin-disp').innerHTML=disp.map((l,i)=>`<span><span class="legend-sq" style="background:${dcols[i]}"></span>${l}</span>`).join('');
+  mkChart('chart-basin-disp',{type:'bar',data:{labels:['T1 Baseline',T2.label.split('—')[0].trim()],datasets:disp.map((l,i)=>({label:l,data:[t1vals[i],t2vals[i]],backgroundColor:dcols[i]+'99',borderColor:dcols[i],borderWidth:1}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}},y:{stacked:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}},title:{display:true,text:'hm³',color:'#8b949e',font:{size:10}}}}}});
+
+  const gains=[T1.AWD-T2.AWD,T2.crop-T1.crop,T1.carbon-T2.carbon,(T2.wfn_pct-T1.wfn_pct)*10];
+  mkChart('chart-basin-gains',{type:'bar',data:{labels:['Water savings\n(hm³)','Crop change\n(kt)','GHG saving\n(kt CO₂)','WfN gain\n(×10 %pts)'],datasets:[{data:gains,backgroundColor:gains.map(v=>v>0?'rgba(63,185,80,0.6)':'rgba(248,81,73,0.6)'),borderColor:gains.map(v=>v>0?'#3fb950':'#f85149'),borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}}}});
+
+  const rebound=sc==='sc2';
+  document.getElementById('basin-rebound-msg').textContent=rebound?'⚠ Rebound risk detected in Sc2: irrigation efficiency gains not accompanied by withdrawal reduction. Area expansion likely. Aggregate depletion increases by +3 hm³. Governance intervention required (cap on irrigated area).':'No rebound detected in this scenario. Withdrawal rules constrain area expansion. Real water savings confirmed.';
+  document.getElementById('basin-rebound-msg').className=rebound?'warn-box':'info-box';
+  const areas=Array.from({length:11},(_,i)=>17000+i*1000);
+  mkChart('chart-basin-rebound',{type:'line',data:{labels:areas.map(a=>fmtI(a)+' ha'),datasets:[{label:'Aggregate depletion',data:areas.map(a=>{const vol=(600/1000)*a*10000;const eMWh=(RHO*G*18*vol)/(PUMP_EFF*3.6e9);return Math.round(vol*0.78/1e6*10)/10;}),borderColor:'#f0883e',backgroundColor:'rgba(240,136,62,0.06)',borderWidth:2,fill:true,tension:0.3,pointRadius:2},{label:'T1 baseline',data:areas.map(_=>136),borderColor:'rgba(255,255,255,0.2)',borderWidth:1,borderDash:[4,4],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}},title:{display:true,text:'AWD (hm³)',color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10},maxRotation:30}}}}});
+}
+
+// ============================================================
+// HSI
+// ============================================================
+function renderHSI(){
+  // Sub-component chart
+  const comp=['Pathogen reduction','Treatment compliance','Exposure pathway'];
+  const vals=[0.71, 0.82, 0.78];
+  document.getElementById('leg-hsi-comp').innerHTML=comp.map((c,i)=>`<span><span class="legend-sq" style="background:${['#3fb950','#388bfd','#a371f7'][i]}"></span>${c}</span>`).join('');
+  mkChart('chart-hsi-comp',{type:'bar',data:{labels:comp,datasets:[{data:vals,backgroundColor:['#3fb95088','#388bfd88','#a371f788'],borderColor:['#3fb950','#388bfd','#a371f7'],borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{max:1,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}}}});
+
+  // HSI vs treatment
+  const treatPts=Array.from({length:21},(_,i)=>i*5);
+  const wsrcs=['surface','ww_treated','ww_untreated'];
+  const wsrcCols=['#388bfd','#3fb950','#f85149'];
+  mkChart('chart-hsi-treat',{type:'line',data:{labels:treatPts.map(t=>t+'%'),datasets:wsrcs.map((w,i)=>({label:w.replace(/_/g,' '),data:treatPts.map(t=>{
+    let h=HSI_BASE[w];
+    if(w==='ww_untreated') h=Math.min(h+(t/100)*0.55,0.90);
+    if(w==='ww_treated')   h=Math.min(h+(t/100)*0.30,0.97);
+    return +h.toFixed(3);
+  }),borderColor:wsrcCols[i],backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:0.3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{max:1,min:0,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}},title:{display:true,text:'HSI score',color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}},title:{display:true,text:'Treatment efficacy (%)',color:'#8b949e',font:{size:10}}}}}});
+
+  // WEFHI vs HSI
+  const hsiPts=Array.from({length:21},(_,i)=>i*0.05);
+  const ref=DATA.find(d=>d.id==='nairobi');
+  mkChart('chart-wefhi-hsi',{type:'line',data:{labels:hsiPts.map(h=>h.toFixed(2)),datasets:[{label:'WEFHI',data:hsiPts.map(h=>+(0.5*(ref.nW*ref.nE+ref.nE*ref.nY+ref.nY*h+h*ref.nW)*90*90).toFixed(1)),borderColor:'#3fb950',backgroundColor:'rgba(63,185,80,0.06)',borderWidth:2,fill:true,tension:0.3,pointRadius:2},{label:'WHO threshold',data:hsiPts.map(_=>+(0.5*(ref.nW*ref.nE+ref.nE*ref.nY+ref.nY*0.75+0.75*ref.nW)*90*90).toFixed(1)),borderColor:'rgba(248,81,73,0.4)',borderWidth:1,borderDash:[4,4],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8b949e',font:{size:10}},title:{display:true,text:'WEFHI (unit²)',color:'#8b949e',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10},maxTicksLimit:11},title:{display:true,text:'HSI score',color:'#8b949e',font:{size:10}}}}}});
+
+  // Flags table
+  const scenarios=[
+    {name:'Nairobi (treated WW, solar drip)',wsrc:'ww_treated',treat:78,itech:'drip',crop:'Vegetables'},
+    {name:'Nairobi (untreated WW, sprinkler)',wsrc:'ww_untreated',treat:0,itech:'sprinkler',crop:'Vegetables'},
+    {name:'Nairobi (untreated WW, 60% treatment)',wsrc:'ww_untreated',treat:60,itech:'drip',crop:'Vegetables'},
+    {name:'Nairobi (treated WW, 90% efficacy)',wsrc:'ww_treated',treat:90,itech:'drip',crop:'Vegetables'}
+  ];
+  document.getElementById('hsi-flags-table').innerHTML=`
+    <table class="data-table">
+      <thead><tr><th>Scenario</th><th>Water source</th><th>Treat %</th><th>Tech</th><th>HSI</th><th>WHO guideline</th><th>Governance flag</th></tr></thead>
+      <tbody>${scenarios.map(sc=>{
+        let h=HSI_BASE[sc.wsrc];
+        if(sc.wsrc==='ww_untreated') h=Math.min(h+(sc.treat/100)*0.55,0.90);
+        if(sc.wsrc==='ww_treated')   h=Math.min(h+(sc.treat/100)*0.30,0.97);
+        const ok=h>=0.75;
+        const marginal=h>=0.5&&h<0.75;
+        return `<tr>
+          <td class="strong">${sc.name}</td>
+          <td style="font-size:11px;color:var(--text3)">${sc.wsrc.replace(/_/g,' ')}</td>
+          <td>${sc.treat}%</td>
+          <td>${sc.itech.replace(/_/g,' ')}</td>
+          <td style="font-weight:500;color:${ok?'var(--green)':marginal?'var(--amber)':'var(--red)'}">${h.toFixed(2)}</td>
+          <td>${ok?badge('Pass','ok'):marginal?badge('Marginal','warn'):badge('Fail','danger')}</td>
+          <td style="font-size:11px">${ok?'Unrestricted irrigation permitted':marginal?'Restricted irrigation — leafy veg. excluded':'Health governance required — no irrigation'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+initSelects(['sel-base','sel-c1','sel-c2']);
+document.getElementById('trans-scheme').innerHTML=DATA.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+document.getElementById('econ-scheme').innerHTML=DATA.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+renderOverview();
+</script>
+</body>
+</html>
